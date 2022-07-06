@@ -26,10 +26,10 @@ btnDropdownSelect.addEventListener('click', () => {
 
 const areaPokemons = document.getElementById('js-list-pokemons')
 
-const closeModalMouseleave = document.querySelector(
+/* const closeModalMouseleave = document.querySelector(
   '.js-close-modal-mouseleave'
 )
-closeModalMouseleave.addEventListener('mouseleave', closeDetailsPokemon)
+closeModalMouseleave.addEventListener('mouseleave', closeDetailsPokemon) */
 
 const areaPokemns = document.getElementById('js-list-pokemons')
 
@@ -41,6 +41,7 @@ function createCardPokemon(code, type, nome, imagePok) {
   let card = document.createElement('button')
 
   card.classList = `card-pokemon js-open-details-pokemon ${type}`
+  card.setAttribute('code-pokemon', code)
   areaPokemns.appendChild(card)
 
   let image = document.createElement('div')
@@ -83,8 +84,6 @@ function listingPokemons(urlApi) {
     method: 'GET',
     url: urlApi
   }).then(response => {
-    const countPokemons = document.getElementById('js-count-pokemons')
-
     const { results, count, next } = response.data
 
     countPokemons.innerText = count
@@ -126,6 +125,30 @@ listingPokemons('https://pokeapi.co/api/v2/pokemon?limit=9&offset=0')
 
 function openDetailsPokemon() {
   document.documentElement.classList.add('open-modal')
+
+  let codePokemon = this.getAttribute('code-pokemon')
+  let imagePokemon = this.querySelector('.thumb-img')
+  let iconTypePokemon = this.querySelector('.info .icon img')
+  let namePokemon = this.querySelector('.info h3')
+  let codeIconPokemon = this.querySelector('.info  span')
+
+  const modalDetails = document.getElementById('js-modal-details')
+  const imgPokemonModal = document.getElementById('js-image-pokemon-modal')
+  const iconTypePokemonModal = document.getElementById('js-image-type-modal')
+  const namePokemonModal = document.getElementById('js-name-pokemon-modal')
+  const codePokemonModal = document.getElementById('js-code-pokemon-modal')
+
+  imgPokemonModal.setAttribute('src', imagePokemon.getAttribute('src'))
+  modalDetails.setAttribute('type-pokemon-modal', this.classList[2])
+  iconTypePokemonModal.setAttribute('src', iconTypePokemon.getAttribute('src'))
+
+  namePokemonModal.textContent = namePokemon.textContent
+  codePokemonModal.textContent = codeIconPokemon.textContent
+
+  /*   axios({
+    method: 'GET',
+    url: `https://pokeapi.co/api/v2/pokemon/${codePokemon}`
+  }).then(response => {}) */
 }
 
 function closeDetailsPokemon() {
@@ -289,14 +312,57 @@ const inputSearch = document.getElementById('js-input-search')
 btnSearch.addEventListener('click', searchPokemon)
 
 inputSearch.addEventListener('keyup', event => {
-  c
-  searchPokemon()
   if (event.code === 'Enter') {
     searchPokemon()
   }
 })
 
 function searchPokemon() {
-  let valueInput = inputSearch.value
-  console.log(valueInput)
+  let valueInput = inputSearch.value.toLowerCase()
+  const typeFilter = document.querySelectorAll('.type-filter')
+
+  typeFilter.forEach(type => {
+    type.classList.remove('active')
+  })
+
+  axios({
+    method: 'GET',
+    url: `https://pokeapi.co/api/v2/pokemon/${valueInput}`
+  })
+    .then(response => {
+      areaPokemons.innerHTML = ''
+      btnLoadMore.style.display = 'none'
+
+      countPokemons.textContent = 1
+
+      const { name, id, sprites, types } = response.data
+
+      const infoCard = {
+        name: name,
+        code: id,
+        image: sprites.other.dream_world.front_default,
+        type: types[0].type.name
+      }
+
+      createCardPokemon(
+        infoCard.code,
+        infoCard.type,
+        infoCard.name,
+        infoCard.image
+      )
+      const cardPokemon = document.querySelectorAll('.js-open-details-pokemon')
+
+      cardPokemon.forEach(card => {
+        card.addEventListener('click', openDetailsPokemon)
+      })
+    })
+    .catch(error => {
+      if (error) {
+        areaPokemons.innerHTML = ''
+        btnLoadMore.style.display = 'none'
+
+        countPokemons.textContent = 0
+        alert('Nao foi Encontrado nenhum pokemon com esse nome')
+      }
+    })
 }
